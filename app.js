@@ -1,25 +1,45 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
 
+// Configuración de Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyDYp0ibzSww3PRq0Xr3KB4aKOjItVfHfgk",
   authDomain: "serum2025-c9486.firebaseapp.com",
   databaseURL: "https://serum2025-c9486-default-rtdb.firebaseio.com",
   projectId: "serum2025-c9486",
-  storageBucket: "serum2025-c9486.firebasestorage.app",
+  storageBucket: "serum2025-c9486.appspot.com",
   messagingSenderId: "662766632659",
   appId: "1:662766632659:web:23b5adac7b7ba776219e26"
 };
 
+// Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Referencias DOM
 const tablaLibres = document.getElementById("tablaLibres");
 const tablaOcupadas = document.getElementById("tablaOcupadas");
 const buscadorGlobal = document.getElementById("buscadorGlobal");
 
 let plazas = [];
 
+// Escuchar datos de Firebase en tiempo real
+onValue(ref(db, 'plazas'), (snapshot) => {
+  plazas = [];
+  snapshot.forEach(child => {
+    const data = child.val();
+    data.id = child.key;
+    plazas.push(data);
+  });
+  renderTablas();
+});
+
+// Filtrar resultados en tiempo real
+buscadorGlobal.addEventListener("input", () => {
+  renderTablas(buscadorGlobal.value);
+});
+
+// Mostrar plazas en tablas
 function renderTablas(filtro = "") {
   tablaLibres.innerHTML = "";
   tablaOcupadas.innerHTML = "";
@@ -36,6 +56,7 @@ function renderTablas(filtro = "") {
 
   libres.forEach((p, i) => {
     const row = document.createElement("tr");
+    row.classList.add("table-success");
     row.innerHTML = `
       <td>${i + 1}</td>
       <td>${p.centroSalud}</td>
@@ -43,13 +64,18 @@ function renderTablas(filtro = "") {
       <td>${p.provincia}</td>
       <td>${p.distrito}</td>
       <td>${p.distancia}</td>
-      <td><button class="btn btn-sm btn-outline-primary" onclick="ocupar('${p.id}')">Ocupar</button></td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1" onclick="ocupar('${p.id}', this)">
+          <i class="bi bi-check-circle"></i> Ocupar
+        </button>
+      </td>
     `;
     tablaLibres.appendChild(row);
   });
 
   ocupadas.forEach((p, i) => {
     const row = document.createElement("tr");
+    row.classList.add("table-danger");
     row.innerHTML = `
       <td>${i + 1}</td>
       <td>${p.centroSalud}</td>
@@ -57,12 +83,17 @@ function renderTablas(filtro = "") {
       <td>${p.provincia}</td>
       <td>${p.distrito}</td>
       <td>${p.distancia}</td>
-      <td><button class="btn btn-sm btn-outline-danger" onclick="restaurar('${p.id}')">Restaurar</button></td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" onclick="restaurar('${p.id}', this)">
+          <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+        </button>
+      </td>
     `;
     tablaOcupadas.appendChild(row);
   });
 }
 
+// Filtrado por texto
 function coincideFiltro(p, texto) {
   return (
     p.centroSalud.toLowerCase().includes(texto) ||
@@ -71,27 +102,20 @@ function coincideFiltro(p, texto) {
   );
 }
 
-// Escucha en tiempo real
-onValue(ref(db, 'plazas'), (snapshot) => {
-  plazas = [];
-  snapshot.forEach(child => {
-    const data = child.val();
-    data.id = child.key;
-    plazas.push(data);
-  });
-  renderTablas();
-});
-
-// Botones globales
-window.ocupar = (id) => {
+// Acción: Ocupar plaza
+window.ocupar = (id, btn) => {
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Ocupando...`;
+  }
   update(ref(db, `plazas/${id}`), { estado: "ocupado" });
 };
 
-window.restaurar = (id) => {
+// Acción: Restaurar plaza
+window.restaurar = (id, btn) => {
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="bi bi-hourglass-split"></i> Restaurando...`;
+  }
   update(ref(db, `plazas/${id}`), { estado: "libre" });
 };
-
-// Filtro global
-buscadorGlobal.addEventListener("input", () => {
-  renderTablas(buscadorGlobal.value);
-});

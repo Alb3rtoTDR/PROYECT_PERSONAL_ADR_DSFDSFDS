@@ -12,7 +12,7 @@ body {
   }
   
   .tabla-scroll {
-    max-height: 450px;
+    max-height: 70vh;
     overflow-y: auto;
     border: 1px solid #dee2e6;
     border-radius: 0.25rem;
@@ -21,8 +21,10 @@ body {
   
   .table th,
   .table td {
-    font-size: 0.875rem;
-    vertical-align: middle;
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 1;
   }
   
   .sticky-top {
